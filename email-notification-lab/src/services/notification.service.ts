@@ -1,4 +1,4 @@
-import { db } from "../db";
+import { supabase } from "../db";
 import {
   sendVMStartedEmail,
   sendVMStoppedEmail,
@@ -25,21 +25,42 @@ export async function sendVMNotification(
     type === "started" ? renderVMStartedTemplate : renderVMStoppedTemplate;
   const { subject } = render({ userName, vmName, status });
 
-  const [insert] = await db.execute(
-    "INSERT INTO email_notifications (user_id, type, recipient, subject, resend_email_id, status) VALUES (?, ?, ?, ?, ?, ?)",
-    [userId, `VM_${type.toUpperCase()}`, to, subject, null, "pending"]
-  );
-  const notificationId = (insert as any).insertId;
+  const { data: inserted, error: insertError } = await supabase
+    .from("email_notifications")
+    .insert({
+      user_id: userId,
+      type: `VM_${type.toUpperCase()}`,
+      recipient: to,
+      subject,
+      resend_email_id: null,
+      status: "pending",
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !inserted) {
+    throw new Error(insertError?.message || "Failed to create notification");
+  }
+
+  const notificationId = inserted.id;
 
   const emailResult =
     type === "started"
       ? await sendVMStartedEmail({ to, userName, vmName, status })
       : await sendVMStoppedEmail({ to, userName, vmName, status });
 
-  await db.execute(
-    "UPDATE email_notifications SET resend_email_id = ?, status = ?, updated_at = NOW() WHERE id = ?",
-    [emailResult.id || null, emailResult.success ? "sent" : "failed", notificationId]
-  );
+  const { error: updateError } = await supabase
+    .from("email_notifications")
+    .update({
+      resend_email_id: emailResult.id || null,
+      status: emailResult.success ? "sent" : "failed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", notificationId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
 
   return { ...emailResult, notificationId };
 }

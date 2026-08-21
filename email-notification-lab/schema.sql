@@ -1,0 +1,29 @@
+CREATE DATABASE IF NOT EXISTS email_notification_lab;
+USE email_notification_lab;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS vms (
+  id INT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  status VARCHAR(50) NOT NULL,
+  user_id INT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_notifications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  type VARCHAR(100) NOT NULL,
+  recipient VARCHAR(255) NOT NULL,
+  subject VARCHAR(255) NOT NULL,
+  resend_email_id VARCHAR(255),
+  status VARCHAR(50) NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO users (id, name, email) VALUES (1, 'Lab User', 'lab@example.com');

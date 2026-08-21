@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import { Resend } from "resend";
 import { startVM, stopVM } from "./services/vm.service";
-import { sendVMStartedEmail, sendVMStoppedEmail } from "./services/email.service";
+import { sendVMNotification } from "./services/notification.service";
 
 dotenv.config();
 
@@ -60,13 +60,16 @@ app.post("/vms/:id/start", async (req: Request, res: Response) => {
     const vm = startVM(req.params.id);
     const to = req.body?.to;
     const userName = req.body?.userName;
+    const userId = Number(req.body?.userId) || 1;
 
     const notification = to
-      ? await sendVMStartedEmail({
+      ? await sendVMNotification({
           to,
           userName,
+          userId,
           vmName: vm.name,
           status: vm.status,
+          type: "started",
         })
       : { success: false, message: "No recipient email provided" };
 
@@ -84,13 +87,16 @@ app.post("/vms/:id/stop", async (req: Request, res: Response) => {
     const vm = stopVM(req.params.id);
     const to = req.body?.to;
     const userName = req.body?.userName;
+    const userId = Number(req.body?.userId) || 1;
 
     const notification = to
-      ? await sendVMStoppedEmail({
+      ? await sendVMNotification({
           to,
           userName,
+          userId,
           vmName: vm.name,
           status: vm.status,
+          type: "stopped",
         })
       : { success: false, message: "No recipient email provided" };
 

@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import { Resend } from "resend";
 import { startVM, stopVM } from "./services/vm.service";
-import { sendVMStartedEmail } from "./services/email.service";
+import { sendVMStartedEmail, sendVMStoppedEmail } from "./services/email.service";
 
 dotenv.config();
 
@@ -59,9 +59,15 @@ app.post("/vms/:id/start", async (req: Request, res: Response) => {
   try {
     const vm = startVM(req.params.id);
     const to = req.body?.to;
+    const userName = req.body?.userName;
 
     const notification = to
-      ? await sendVMStartedEmail({ to, vmName: vm.name })
+      ? await sendVMStartedEmail({
+          to,
+          userName,
+          vmName: vm.name,
+          status: vm.status,
+        })
       : { success: false, message: "No recipient email provided" };
 
     res.status(200).json({ success: true, vm, notification });
@@ -73,9 +79,28 @@ app.post("/vms/:id/start", async (req: Request, res: Response) => {
   }
 });
 
-app.post("/vms/:id/stop", (req: Request, res: Response) => {
-  const vm = stopVM(req.params.id);
-  res.status(200).json({ success: true, vm });
+app.post("/vms/:id/stop", async (req: Request, res: Response) => {
+  try {
+    const vm = stopVM(req.params.id);
+    const to = req.body?.to;
+    const userName = req.body?.userName;
+
+    const notification = to
+      ? await sendVMStoppedEmail({
+          to,
+          userName,
+          vmName: vm.name,
+          status: vm.status,
+        })
+      : { success: false, message: "No recipient email provided" };
+
+    res.status(200).json({ success: true, vm, notification });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message || "Unexpected error",
+    });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

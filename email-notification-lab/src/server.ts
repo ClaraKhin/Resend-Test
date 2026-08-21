@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import { Resend } from "resend";
-import { startVM } from "./services/vm.service";
+import { startVM, stopVM } from "./services/vm.service";
 import { sendVMStartedEmail } from "./services/email.service";
 
 dotenv.config();
@@ -58,7 +58,7 @@ app.post("/test-email", async (req: Request, res: Response) => {
 app.post("/vms/:id/start", async (req: Request, res: Response) => {
   try {
     const vm = startVM(req.params.id);
-    const to = req.body.to;
+    const to = req.body?.to;
 
     const notification = to
       ? await sendVMStartedEmail({ to, vmName: vm.name })
@@ -71,6 +71,11 @@ app.post("/vms/:id/start", async (req: Request, res: Response) => {
       message: err.message || "Unexpected error",
     });
   }
+});
+
+app.post("/vms/:id/stop", (req: Request, res: Response) => {
+  const vm = stopVM(req.params.id);
+  res.status(200).json({ success: true, vm });
 });
 
 const PORT = process.env.PORT || 3000;

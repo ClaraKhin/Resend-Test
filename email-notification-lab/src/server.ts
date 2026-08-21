@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
 import { Resend } from "resend";
+import { startVM } from "./services/vm.service";
 
 dotenv.config();
 
@@ -51,6 +52,11 @@ app.post("/test-email", async (req: Request, res: Response) => {
       message: err.message || "Unexpected error",
     });
   }
+});
+
+app.post("/vms/:id/start", (req: Request, res: Response) => {
+  const vm = startVM(req.params.id);
+  res.status(200).json({ success: true, vm });
 });
 
 const PORT = process.env.PORT || 3000;

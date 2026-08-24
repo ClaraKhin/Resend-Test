@@ -1,5 +1,6 @@
+import "dotenv/config";
+
 import express, { Request, Response } from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import session from "express-session";
 import { Resend } from "resend";
@@ -7,8 +8,6 @@ import { startVM, stopVM } from "./services/vm.service";
 import { sendVMNotification } from "./services/notification.service";
 import { signUp, login, getUserById } from "./services/auth.service";
 import { supabase } from "./db";
-
-dotenv.config();
 
 declare module "express-session" {
   interface SessionData {
@@ -294,6 +293,25 @@ function mapResendEventToStatus(eventType: string): string {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+(async () => {
+  try {
+    const { error } = await supabase
+      .from("users")
+      .select("id", { count: "exact", head: true });
+
+    if (error) {
+      console.error("Could not connect to Supabase.");
+      console.error("Project URL being used:", process.env.SUPABASE_URL?.trim());
+      console.error("Check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env");
+      console.error("Error:", error.message);
+      process.exit(1);
+    }
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on http://localhost:${PORT}`);
+    });
+  } catch (err: any) {
+    console.error("Supabase connection test crashed:", err.message);
+    process.exit(1);
+  }
+})();

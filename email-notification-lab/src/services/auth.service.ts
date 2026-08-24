@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { supabase } from "../db";
 
 export interface User {
@@ -12,7 +12,7 @@ export async function signUp(
   password: string,
   name: string
 ): Promise<User> {
-  const hash = await bcrypt.hash(password, 10);
+  const hash = bcrypt.hashSync(password, 10);
 
   const { data, error } = await supabase
     .from("users")
@@ -42,7 +42,7 @@ export async function login(email: string, password: string): Promise<User> {
     throw new Error("Invalid credentials");
   }
 
-  const ok = await bcrypt.compare(password, data.password_hash);
+  const ok = bcrypt.compareSync(password, data.password_hash);
   if (!ok) {
     throw new Error("Invalid credentials");
   }

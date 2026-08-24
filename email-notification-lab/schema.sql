@@ -1,17 +1,24 @@
-CREATE TABLE IF NOT EXISTS users (
+DROP TABLE IF EXISTS webhook_events CASCADE;
+DROP TABLE IF EXISTS email_notifications CASCADE;
+DROP TABLE IF EXISTS vms CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
-  email TEXT NOT NULL
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS vms (
+CREATE TABLE vms (
   id INT PRIMARY KEY,
   name TEXT NOT NULL,
   status TEXT NOT NULL,
   user_id INT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS email_notifications (
+CREATE TABLE email_notifications (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL,
   type TEXT NOT NULL,
@@ -23,5 +30,10 @@ CREATE TABLE IF NOT EXISTS email_notifications (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-INSERT INTO users (id, name, email) VALUES (1, 'Lab User', 'lab@example.com')
-ON CONFLICT (id) DO NOTHING;
+CREATE TABLE webhook_events (
+  id SERIAL PRIMARY KEY,
+  resend_email_id TEXT,
+  event_type TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
